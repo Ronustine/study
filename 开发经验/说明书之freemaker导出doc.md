@@ -1,0 +1,9 @@
+比较简单相对于POI和jacob。
+操作方法：新建一个doc，填入内容，将$｛XXX｝替代可变化的内容。保存成xml文档，改后缀为.ftl。此时的文件是给freemaker读和编辑用的。
+伪代码：
+Configuration读取ftl文件，编码
+File新建doc文件
+Template接收Configuration读取的文件
+Write流接收BufferedWriter还有file
+Template的porcess方法，参数为Map和输出流
+关闭流。
