@@ -17,9 +17,9 @@
 
 #### 书单
 
-程序员修炼之道 The Pragmatic Programmer
-代码整洁之道 Clean Code
-程序员的职业素养 The Clean Code
-领域驱动设计和实践 Domain-Driven Design
-测试驱动的面向对象软件开发 Growing Object-Oriented Software, Guided by Tests
-持续交付 Continuous Delivery
+- 程序员修炼之道 The Pragmatic Programmer
+- 代码整洁之道 Clean Code
+- 程序员的职业素养 The Clean Code
+- 领域驱动设计和实践 Domain-Driven Design
+- 测试驱动的面向对象软件开发 Growing Object-Oriented Software, Guided by Tests
+- 持续交付 Continuous Delivery
