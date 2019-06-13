@@ -8,12 +8,13 @@
 - **Fault Tolerance Patterns容错模式**
 - **Lean manufacturing principles精益生产原则**
 - **持续交付**
-
 - 算法
 - 开发经验
+- 计算机网络、安全
 - 版本控制
 - SQL
 - Linux简单操作
+- 源码学习
 
 #### 书单
 
