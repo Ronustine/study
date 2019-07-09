@@ -25,13 +25,15 @@ public static void main( String[] args ) {
 }
 ```
 
-如果是**注解**，那么接下来介绍的注解，与注入都有关系，此时将使用`AnnotationConfigApplicationContext`对象。
-`AnnotationConfigApplicationContext`需要使用一个类作为入口：如下面使用了自己写的`MainConfig`
+如果是**注解**，那么看接下来的注解介绍，此时将使用`AnnotationConfigApplicationContext`对象。
+`AnnotationConfigApplicationContext`需要使用一个类作为入口：如下面使用了自己写的`MainConfig`（称为配置类）
 ```java
 public static void main( String[] args ) {
     AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(MainConfig.class);
 }
 ```
+
+## ---- 注入注解介绍开始 ----
 
 ## @Configurantion & @Bean
 ```java
@@ -105,11 +107,11 @@ public enum FilterType {
 public class SelfFilterType implements TypeFilter {
     @Override
     public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory) throws IOException {
-        //获取当前类的注解源信息
+        // 获取当前类的注解源信息
         AnnotationMetadata annotationMetadata = metadataReader.getAnnotationMetadata();
-        //获取当前类的class的源信息
+        // 获取当前类的class的源信息
         ClassMetadata classMetadata = metadataReader.getClassMetadata(); 
-        //获取当前类的资源信息
+        // 获取当前类的资源信息
         Resource resource = metadataReader.getResource();
         if(classMetadata.getClassName().contains("dao")){
             return true;
