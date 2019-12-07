@@ -394,6 +394,8 @@ person--destroyMethod
 ```
 TODO 比较模糊，等源码过完再完善这里
 
+`InitializingBean`：静态检查或者属性的赋值
+
 ## @Value & @PropertySource
 给组件赋值，**PropertySource必须写在配置类上**
 ```java
