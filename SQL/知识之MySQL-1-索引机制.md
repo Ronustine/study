@@ -52,6 +52,7 @@
 聚集索引：索引和数据在一个文件上
 非聚集索引：索引和数据不在一个文件上
 ![2](DB-2.png)
+
 #### MyISAM
 - 非聚集
 - 有三个文件构成.frm(表结构) .MYD(数据) .MYI(索引)
@@ -119,7 +120,7 @@ id是select的序号，select有几个就有几条，id顺序按select出现的�
 当有union时，UNION RESULT的table列的值为`<union1,2>`, 1和2表示参与union的select行id
 
 #### type
-这列表示关联类型或访问类型，即MySQL决定如何查找表中的行，查找数据行记录的大概范围。
+这列表示关联类型或访问类型，**即MySQL决定如何查找表中的行**，查找数据行记录的大概范围。
 依此从优到差为：system > const > eq_ref > ref > range > index > ALL
 保证查询达到range，最好ref
 - NULL： MySQL在优化阶段分解查询语句，在执行阶段用不着再访问表或索引。如在索引列选取最小值，可单独查找索引完成，不需要访问表；`explain select min(id) from film;`
@@ -177,4 +178,4 @@ explain select film_id from film left join film_actor on film.id = film_actor.fi
 - Using index condition，查询的列不完全被索引覆盖，where条件中是一个前导列的范围；
 - Using temporary，创建了一张临时表来处理查询。出现这种情况是要优化的，首先考虑索引；
 - Using filesort，用外部排序而不是索引排序，数据较小时从内存排序，否则需要在磁盘完成排序。也是要考虑索引优化的；
-- select tables optimized away，使用某些聚合函数（max、min）来访问存在索引的某个字段
+- select tables optimized away，使用某些聚合函数（max、min）来访问存在索引的某个字段；
