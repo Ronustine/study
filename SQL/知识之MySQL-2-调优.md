@@ -53,10 +53,10 @@ name,age都在索引内，可直接返回了
 `EXPLAIN SELECT * FROM employees WHERE name != 'LiLei';`
 可以改成index，把*改成在索引内的值
 
-#### is null，is not null 也无法使用索引；
+#### is null，is not null 也无法使用索引
 null很特殊，没法和索引比对。尽量把字段设计成NOT NULL
 
-#### like以通配符开头（'%Lei'）索引会失效变成全表；
+#### like以通配符开头（'%Lei'）索引会失效变成全表
 如果要使用索引
 - 使用覆盖索引；
 - 要么用专门的搜索引擎；
