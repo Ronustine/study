@@ -160,7 +160,7 @@ make: *** [Makefile:8：build] 错误 2
 reopen，是在日志做了备份，重新新建了一个日志文件要做的操作，否则还是会往已经修改文件名的文件写入日志 —— 这是因为文件句柄fd没有变，只是文件名变了。
 
 #### 配置文件语法格式
-```
+```bash
 worker_processes  1;
 events {
     worker_connections  1024;
@@ -179,8 +179,8 @@ http {
         }
         location /nginx_status {
     	   stub_status on;
-    	   access_log   off;
-  	    }
+    	   access_log off;
+        }
     }
 }
 ```
