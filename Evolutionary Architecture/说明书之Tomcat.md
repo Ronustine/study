@@ -236,3 +236,89 @@ deploy_war
 ```
 
 ## 网络通信模型
+
+#### IO
+IO是指为数据传输所提供的输入输出流，其输入输出对象可以是：文件、网络服务、内存等。
+
+通常情况下IO操作是比较耗时的，所以为了高效的使用硬件，应用程序可以用一个专门线程进行IO操作，而另外一个线程则利用CPU的空闲去做其它计算。这种为提高应用执行效率而采用的IO操作方法即为IO模型。
+
+#### Tomcat模式
+![3](img/tomcat_3.png)
+![4](img/tomcat_4.png)
+
+| IO模型 | 描述 | 
+| :---- | :---- |
+| BIO | 同步阻塞式IO，即Tomcat使用传统的java.io进行操作。该模式下每个请求都会创建一个线程，对性能开销大，不适合高并发场景。优点是稳定，适合连接数目小且固定架构。| 
+| NIO | 同步非阻塞式IO，jdk1.4 之后实现的新IO。该模式基于多路复用选择器监测连接状态在同步通知线程处理，从而达到非阻塞的目的。比传统BIO能更好的支持并发性能。Tomcat 8.0之后默认采用该模式 | 
+| APR | 全称是 Apache Portable Runtime/Apache可移植运行库)，是Apache HTTP服务器的支持库。可以简单地理解为，Tomcat将以JNI的形式调用Apache HTTP服务器的核心动态链接库来处理文件读取或网络传输操作。使用需要编译安装APR 库 | 
+| AIO(asynchronous I/O) | 异步非阻塞式IO，jdk1.7后之支持 。与nio不同在于不需要多路复用选择器，而是请求处理线程执行完程进行回调调知，已继续执行后续操作。Tomcat 8之后支持。 | 
+
+**使用指定IO模型的配置方式:**
+配置 server.xml 文件当中的 <Connector  protocol="HTTP/1.1">   修改即可。
+默认配置 8.0  protocol=“HTTP/1.1” 8.0 之前是 BIO 8.0 之后是NIO
+**BIO**
+protocol=“org.apache.coyote.http11.Http11Protocol“ 
+**NIO**
+protocol=”org.apache.coyote.http11.Http11NioProtocol“
+**AIO**
+protocol=”org.apache.coyote.http11.Http11Nio2Protocol“
+**APR**
+protocol=”org.apache.coyote.http11.Http11AprProtocol“
+
+模拟：
+多个连接连接后台，在写入的时候占据500ms的时间，如果是BIO，会导致后台线程处理数量增大，如果是NIO则没反应。如果是后台内部处理慢，则在BIO，NIO都会增大。
+
+NIO和AIO差不多的效果
+
+线程变多的原因：
+- BIO：线程数量 会受到 客户端阻塞、网络延迟、业务处理慢的影响，导致线程数会更多
+- NIO：线程数量 会受到业务处理慢的影响，导致线程数会更多
+
+#### 源码
+栈中可以找到这些线程池：
+Accept 线程组  acceptorThreadCount
+exec 线程组 maxThread
+
+处理IO模型的关键类：JIoEndpoint。分BIO、NIO
+
+BIO JIoEndpoint中有三个内部类：
+- Acceptor(extends Runnable)
+`countUpOrAwaitConnection()`保证不超过最大连接数，超过则阻塞直到超时时长 -> `serverSocketFactory.acceptSocket(serverSocket)`阻塞，等待连接 -> `setSocketOptions(scoket)`设置相关参数 -> `processSocket(socket)`到下面一点了
+- SocketProcessor(extends Runnable)
+`new SocketProcessor(socketWrapper)`这里的run方法是处理我们的业务代码（比如到`Transmission.doPost(...)`） -> `proceess(socketWrapper)` -> `coyoteAdapter`对Http协议进行解析 -> `doFilter(...)` -> `doService(...)` -> `Transmission.doPost(...)`
+- AsynTimeout：用来处理超时的
+
+从上面内部类的分析，可以直到处理连接的和我们的业务代码是合在一起处理的。
+
+Tomcat NIO在代码层面上比BIO的多了Poller（处理IO的线程，默认俩），用来处理连接，接受了完整的数据才交给后面的业务逻辑，相当于多了一层，解耦了。那Poller是否有和BIO中处理连接线程池一样的问题呢？
+
+**NIO是需要操作系统支持的**。建立连接时，当服务端开始读（硬件指令）后，IO线程便不再关心，而是直接处理下一个连接。此时操作系统会维护一个selectKey。读完之后便会完整的存在内存中。而IO线程也是不断轮询selectKey，判断是否是准备就绪的状态。准备就绪的才会交到处理业务的线程池中，得到业务结果后会交到IO线程写回客户端
+
+NIO JIoEndpoint中多了Poller内部类
+- Acceptor(extends Runnable)
+`serverSocketFactory.acceptSocket(serverSocket)`入参是NIO非阻塞的socket
+- poller(extends Runnable)
+在 `setSocketOptions(scoket)`中交给NIO -> `getPoller0().register(channel)` -> `addEvent()`
+
+在Poller run中`selector.select(selectorTimeout)`是获取准备就绪key的数量（了解一下Java NIO代码）。
+获取到后对keys遍历获取写入的数据，给到业务处理的线程池。
+
+## ClassLoader
+#### jvm里ClassLoader的层次结构
+> （双亲委派）
+
+![5](img/tomcat_5.png)
+
+**BootstrapClassLoader（启动类加载器）**
+负责加载 JVM 运行时核心类,加载System.getProperty("sun.boot.class.path")所指定的路径或jar
+**ExtensionClassLoader**
+负责加载 JVM 扩展类，比如 swing 系列、内置的 js 引擎、xml 解析器 等等，这些库名通常以 javax 开头，它们的 jar 包位于 JAVAHOME/lib/rt.jar文件中.
+加载System.getProperty("java.ext.dirs")所指定的路径或jar。在使用Java运行程序时，也可以指定其搜索路径，例如：java -Djava.ext.dirs=d:\projects\testproj\classes HelloWorld。
+**AppClassLoader**
+才是直接面向我们用户的加载器，它会加载 Classpath 环境变量里定义的路径中的 jar 包和目录。我们自己编写的代码以及使用的第三方 jar 包通常都是由它来加载的。
+加载System.getProperty("java.class.path")所指定的路径或jar。在使用Java运行程序时，也可以加上-cp来覆盖原有的Classpath设置，例如： java -cp ./lavasoft/classes HelloWorld
+
+#### Tomcat的 类加载顺序
+![6](img/tomcat_6.png)
+在Tomcat中，默认的行为是先尝试在Bootstrap和Extension中进行类型加载，如果加载不到则在WebappClassLoader中进行加载，如果还是找不到则在Common中进行查找。因为要保证webapp用到版本的正确性。
+相关代码在`WebappClassLoader`。可以控制顺序，先Common再Webapp（通过delegate标志），但是如果涉及到tomcat使用的类，则一定先走Common的classLoader。
