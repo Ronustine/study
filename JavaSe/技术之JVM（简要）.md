@@ -8,6 +8,11 @@
 - 解析：将符号引用替换为直接引用，该阶段会把一些静态方法(符号引用，比如 main()方法)替换为指向数据所存内存的指针或句柄等(直接引用)，这是所谓的静态链接过程(类加载期间完成)，动态链接是在程序运行期间完成的将符号引用替换为直接引用；
 - 初始化：对类的静态变量初始化为指定的值，执行静态代码块；
 
+## 加载规则
+- 对类的初始化会对父类做初始化，但对接口不会；
+- 数组中的类不会被类加载器加载；
+
+
 ## 类加载器
 ![1](img/JVM_1.jpg)
 上面加载过程主要是通过加载器来实现的，java有
@@ -77,7 +82,7 @@ protected Class<?> loadClass(String name, boolean resolve)
 
 #### 打破双亲委派机制
 重写ClassLoader的loadClass。
-Tomcat为例，为什么要打破？
+###### Tomcat为例，为什么要打破？
 1. 一个web容器可能需要部署两个应用程序，不同的应用程序可能会依赖同一个第三方类库的不同版本，要保证每个应用程序的类库都是独立的，保证相互隔离；
 2. 部署在同一个web容器中相同的类库相同的版本可以共享。否则，如果服务器有n个应用程序，那么要有n份相同的类库加载进虚拟机；
 3. web容器也有自己依赖的类库，不能与应用程序的类库混淆。基于安全考虑，应该让容器的类库和程序的类库隔离开来；
@@ -94,6 +99,15 @@ WebAppClassLoader可以使用SharedClassLoader加载到的类，但各个 WebApp
 而JasperLoader的加载范围仅仅是这个JSP文件所编译出来的那一个.Class文件，它出现的目的就是为了被丢弃：当Web容器检测到JSP文件被修改时，会替换掉目前的 JasperLoader的实例，并通过再建立一个新的Jsp类加载器来实现JSP文件的热加载功能。
 
 tomcat为了实现隔离性，没有遵守双亲委派这个约定，每个webappClassLoader加载自己的目录下的class文件，不会传递给父类加载器，打破了双亲委派机制。
+
+###### SPI（待补充）
+`Class.forName("com.mysql.jdbc.Driver")`
+Launcher ServerLoader 改变了上下文加载器
+
+#### JClasslib插件
+> idea插件，比javap -v清晰
+
+view -> show bytecode with jclasslib
 
 ## JVM 运行时数据区
 - 堆
