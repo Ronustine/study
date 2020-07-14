@@ -1,7 +1,8 @@
 [TOC]
 
 ## RabbitMQ介绍
-> 一个开源的消息代理和队列服务器，（通过elang语言来开发）通过普通的协议(AMQP协议)来完成不同应用之间的数据共享
+> 一个开源的消息代理和队列服务器，（通过elang语言来开发）通过普通的协议(AMQP协议)来完成不同应用之间的数据共享。文档完备。
+
 场景使用：
 - 秒杀；
 - 短信发送；
@@ -110,11 +111,12 @@ build();
 
 ## 功能
 #### 开启消息投递模式（生产者）
+场景：可以解决生产者到Mq的消息丢失问题，使用异步confirm效果较好。
 `channel.confirmSelect()`，即ConfirmListener。并添加自定义监听器（继承ConfirmListener），实现handleAck、handleNack。
 当回调handleAck表示MQ服务接收到了消息。
 
 #### 手动、自动签收（消费者）
-场景：消费者没有启动，MQ堆积了很多消息。
+场景：消费者没有启动，MQ堆积了很多消息。手动签收可以解决生产者不丢失消息。
 自动签收会导致消费者启动会一次性接收完，出现资源告急。手动签收则会处理完一条再收下一条。
 `channel.basicNack(...)`：不确认消息的消费。入参有requeue的选择，如果是true，则会重回队列，容易死循环，建议不重回队列。
 
@@ -303,7 +305,7 @@ public class SelfConverter implements MessageConverter{
 是一款提供高可用性、负载均衡以及基于TCP和HTTP应用的代理软件，HAProxy是完全免费的、借助HAProxy可以快速并且可靠的提供基于TCP和HTTP应用的代理解决方案。 HAProxy适用于那些负载较大的web站点，这些站点通常又需要会话保持或七层处理。
 HAProxy可以支持数以万计的并发连接,并且HAProxy的运行模式使得它可以很 简单安全的整合进架构中，同时可以保护web服务器不被暴露到网络上。
 
-**注意**：如果需要HAProxy高可用，则需要用到keepalive
+**注意**：如果需要HAProxy高可用，则需要用到KeepAlived
 
 ```bash
 # 安装&解压
