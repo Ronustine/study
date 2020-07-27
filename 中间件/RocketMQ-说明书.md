@@ -228,9 +228,11 @@ Oneway：只管发送；
 注意：消息发送成功也不意味着它是可靠的。要确保不会丢失任何 消息，还应启用同步Master服务器或同步刷盘，即SYNC_MASTER或SYNC_FLUSH
 
 ###### 顺序消息
-> 指可以按照消息的发送顺序来消费(FIFO)。RocketMQ可以严格的保证消 息有序，可以分为分区有序或者全局有序。
+> 指可以按照消息的发送顺序来消费(FIFO)。RocketMQ可以严格的保证消息有序，可以分为分区有序或者全局有序。
 
 默认的情况下消息发送会采取Round Robin轮询方式把消息 发送到不同的queue(分区队列)；而消费消息的时候从多个queue上拉取消息，这种情况发送和消费是只能保证分区顺序。但是如果控制发送的顺序消息只依次发送到同一个queue中，消费的时候只从这个queue上依次拉取，则保证全局顺序。
+
+在Product发送时可以根据自定义实现选择某个队列的方法。
 
 ###### <span id="jump4">拉取消息</span>
 push
@@ -281,16 +283,83 @@ rocketmq并不会无休止的的信息事务状态回查，默认回查15次，�
 RocketMQ事务消息方案中引入了Op消息的概念，用Op消息标识事务消息已经确定的状态（Commit或者Rollback）。如果一条事务消息没有对应的Op消息，说明这个事务的状态还无法确定（可能是二阶段失败了）。引入Op消息后，事务消息无论是Commit或者Rollback都会记录一个Op操作。Commit相对于Rollback只是在写入Op消息前创建Half消息的索引。
 RocketMQ将Op消息写入到全局一个特定的Topic中通过源码中的方法—TransactionalMessageUtil.buildOpTopic()；这个Topic是一个内部的Topic（像Half消息的Topic一样），不会被用户消费。Op消息的内容为对应的Half消息的存储的Offset，这样通过Op消息能索引到Half消息进行后续的回查操作。
 
+```java
+// SpringBoot + RocketMq事务
+// 注意：发送事务的组名与监听器的组名要一致
+
+// 一：发送半消息
+SendResult sendResult = rocketMQTemplate.sendMessageInTransaction("producerGroup1", topic, msg, null);
+
+
+// 二：实现一个监听器，用于hafl消息发送成功后回调执行本地事务的方法
+@RocketMQTransactionListener(txProducerGroup = "producerGroup1")
+public class TransactionListenerImpl implements RocketMQLocalTransactionListener {
+    // MQ接收半消息返回成功时回调的方法
+    @Override
+    public RocketMQLocalTransactionState executeLocalTransaction(Message msg, Object arg) {
+        String transId = (String)msg.getHeaders().get(RocketMQHeaders.PREFIX + RocketMQHeaders.TRANSACTION_??)
+        // 写业务相关的事务操作逻辑
+
+        // 根据业务的事务长短返回状态
+        // 1. 提交
+        return RocketMQLocalTransactionState.COMMIT;
+        // 2. 回滚
+        return RocketMQLocalTransactionState.ROLLBACK;
+        // 3. 未知，MQ会回查多次（根据查询的结果决定次数）。事务操作比较费时的场景可用
+        return RocketMQLocalTransactionState.UNKNOWN;
+    }
+
+    // MQ接收到事务未知时回查的方法
+    @Override
+    public RocketMQLocalTransactionState checkLocalTransaction(Message msg) {
+        String transId = (String)msg.getHeaders().get(RocketMQHeaders.PREFIX + RocketMQHeaders.TRANSACTION_??)
+        // 业务逻辑，查询事务成功没，分情况返回结果
+        // 1. 提交
+        return RocketMQLocalTransactionState.COMMIT;
+        // 2. 回滚
+        return RocketMQLocalTransactionState.ROLLBACK;
+        // 3. 未知，下次会再查。默认上限15次，可自行调整次数。若始终不行则不在发送消息出去
+        return RocketMQLocalTransactionState.UNKNOWN;
+    }
+
+}
+```
+
 ## 源码
+
+项目结构：
+| 模块名称 | 作用 |
+| -- | -- |
+| broker | c 和 p端消息存储逻辑 |
+| client | 客户端api，c、p接收和发送 |
+| common | 公共组件：常量、基类、数据结构 |
+| tools | 运维tools：命令行工具模块 |
+| store | 存储模块：消息、索引、commitlog存储 |
+| namesrv | 服务管理模块：服务注册topic等信息存储 |
+| remoting | 远程通讯模块：netty+fastjson |
+| logappender | 日志适配模块 |
+| example | Demo |
+| filtersrv | 消息过滤器模块 |
+| srvutil | 辅助模块 |
+| filter | 过滤模块：消息过滤模块 |
+| distribution | 部署、运维相关zip包中的代码 |
+| openmessaging | 兼容openmessaging分布式消息模块 |
+
+#### NameServer启动入口
+NamesrvStartup
+
+#### ？
 如何连接Broker，访问NameServer获取路由消息
 ```java
-// DefaultMQPushConsumerImpl下，核心是MQClientInstance，即mQClientFactory
+// Consumer主要是看这个类：DefaultMQPushConsumerImpl，里面的核心是MQClientInstance，即mQClientFactory
 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
-// 这是consumer整个通信的核心
+// 这是consumer整个通信的核心，
+// MQClientInstance#start里面有各种定时任务，解剖这个方法。
 mQClientFactory.start();
+```
 
-// MQClientInstance#start里面有各种定时任务
-// Start various schedule tasks
+```java
+// 详细一：Start various schedule tasks
 this.startScheduledTask();
 // startScheduledTask中的详细：
 private void startScheduledTask() {
@@ -381,4 +450,33 @@ public void run() {
 
     log.info(this.getServiceName() + " service end");
 }
+```
+```java
+// 详细二：建立长连接。（Push即是在Pull的封装）
+this.pullMessageService.start();
+// PullMessageService extends ServiceThread，ServiceThread implements Runnable
+// 可以找PullMessageService的run方法
+@Override
+public void run() {
+    log.info(this.getServiceName() + " service started");
+    // 循环，不断构造pullRequest获取消息
+    while (!this.isStopped()) {
+        try {
+            PullRequest pullRequest = this.pullRequestQueue.take();
+            this.pullMessage(pullRequest);
+        } catch (InterruptedException ignored) {
+        } catch (Exception e) {
+            log.error("Pull Message Service Run Method exception", e);
+        }
+    }
+
+    log.info(this.getServiceName() + " service end");
+}
+
+```
+
+```java
+// 详细三：负载均衡，也是向pullRequestQueue放置pullRequest的地方
+this.rebalanceService.start();
+
 ```
