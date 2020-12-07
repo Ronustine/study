@@ -321,7 +321,7 @@ person--destroy
 
 现在，根据JSR250规范 增加提供的注解@PostConstruct 和@ProDestory标注的方法
 
-现在，添加`BeanBeanPostProcessor`，后置处理器。在Bean的初始化方法（init）前后调用。可用于修改Bean的属性
+现在，添加`BeanPostProcessor`，后置处理器。在Bean的初始化方法（init）前后调用。可用于修改Bean的属性
 ```java
 // 配置类，注入Person，SelfBeanPostProcessor
 @Configuration

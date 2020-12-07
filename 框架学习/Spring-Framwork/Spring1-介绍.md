@@ -5,7 +5,7 @@
 [TOC]
 
 ## 功能
-![1](../../img/框架学习/Spring-Framwork/1-1.jpg)
+![1](1-1.jpg)
 
 - Overview: history, design philosophy, feedback, getting started.
 - Core: IoC Container, Events, Resources, i18n, Validation, Data Binding, Type Conversion, SpEL, AOP.

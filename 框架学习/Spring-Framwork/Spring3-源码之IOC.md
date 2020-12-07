@@ -2,6 +2,8 @@
 
 [TOC]
 
+> 核心：资源集中管理，实现可配置并且易于管理；降低资源之间的耦合度。
+
 ## 准备：BeanDefinition
 
 是Spring容器中Bean的描述，
@@ -10,7 +12,7 @@
 
 监听器，注册到多播器中`ApplicationEventMulticaster`，这里使用了观察者模式。
 
-### 用法
+#### 用法
 
 发布方式，见下
 1. 实现`ApplicationListener`接口，可注册自己的监听器
@@ -45,7 +47,7 @@ public class App {
 */
 ```
 
-### 源码
+#### 源码
 
 位置：`AnnotationConfigApplicationContext`初始化 -> `refresh()` -> `initApplicationEventMulticaster()`
 - 使用提供的多播器
@@ -65,7 +67,7 @@ public class SelfMulticaster extends SimpleApplicationEventMulticaster{
 
 所有的bean定义信息将要被加载到容器中，Bean实例还没有被初始化。
 
-### 用法
+#### 用法
 
 ```java
 @Component
@@ -86,14 +88,14 @@ public class SelfBeanDefinationRegisterPostProcessor implements BeanDefinitionRe
 }
 ```
 
-### 源码
+#### 源码
 
 
 ## 准备：BeanFactoryPostProcessor
 
 Bean工厂的后置处理器。当Bean定义加载到容器中的时候会调用，此时还未实例化Bean。可以利用这个空隙修改BeanDefinition的相关内容。不常用。
 
-### 用法
+#### 用法
 
 ```java
 @Component
@@ -132,13 +134,17 @@ public class Person {
 */
 ```
 
-### 源码
+#### 源码
 
 ## 正式：AnnotationConfigApplicationContext
+
+> BeanFactory与ApplicationContext
+![1](3-1.jpg)
 
 这个对象做了什么操作？
 `AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(MainConfig.class);`
 
+AnnotationConfigApplicationContext继承自GenericApplicationContext，此Generic..有一个BeanFactory: DefaultListableBeanFactory
 ```java
 // 这里开始
 public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
@@ -166,4 +172,17 @@ public AnnotationConfigApplicationContext() {
 }
 
 
+```
+## BeanPostProcessor
+> Bean后置处理器，它是Spring中定义的接口，在Spring容器的创建过程中（具体为Bean初始化前后）会回调BeanPostProcessor中定义的两个方法
+```java
+public interface BeanPostProcessor {
+
+    // postProcessBeforeInitialization方法会在每一个bean对象的初始化方法调用之前回调
+    Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException;
+    
+    // postProcessAfterInitialization方法会在每个bean对象的初始化方法调用之后被回调
+    Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException;
+
+}
 ```
