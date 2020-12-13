@@ -1,8 +1,10 @@
-# 常用注解
+# IOC常用注解
 
 提纲
 [TOC]
 
+> 1. 有哪些注解可以将Bean实例化注入容器中；
+> 2. 有哪些注解可以将Bean从容器取出来；
 ## 引入：xml与注解
 如果使用**xml文件**注入，那么xml文件应该是这样的：
 ```xml
@@ -176,7 +178,7 @@ public class MainConfig {
 **这里注入结果是Person和Car类**，id分别为：`com.ronustine.testimport.Person`, `car`
 
 ## FactoryBean
-场景：复杂的初始化，例子：SqlSessionFactoryBean
+场景：在某些情况下，实例化Bean过程比较复杂，依赖多，xml的配置很繁杂（用硬编码），例子：SqlSessionFactoryBean
 ```java
 public class PersonFactoryBean implements FactoryBean {
     // 实际上是获取这里返回的类
@@ -223,6 +225,8 @@ public class App {
 - Scope默认为单例的，容器在初始化的时候就加载。饿汉方式
 - Scope指定为prototype时是多实例的（原型模式），在第一次使用才会加载。懒汉方式
 （传送门：多实例下不能解决循环依赖的问题）
+- request同一次请求
+- session同一个会话级别
 
 ## Bean的懒加载
 主要针对单实例的情况。容器在初始化不加载，第一次使用才加载
@@ -394,7 +398,7 @@ person--destroyMethod
 ```
 TODO 比较模糊，等源码过完再完善这里
 
-`InitializingBean`：静态检查或者属性的赋值
+`InitializingBean`：静态检查、校验或者属性的赋值
 
 ## @Value & @PropertySource
 给组件赋值，**PropertySource必须写在配置类上**
