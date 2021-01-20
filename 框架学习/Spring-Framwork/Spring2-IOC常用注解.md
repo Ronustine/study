@@ -219,24 +219,6 @@ public class App {
 如果要获取PersonFactoryBean对象，那么这样获取：
 `ctx.getBean("&personFactoryBean")`
 
-## ---- 注入注解介绍结束 ----
-
-## Bean的作用域
-- Scope默认为单例的，容器在初始化的时候就加载。饿汉方式
-- Scope指定为prototype时是多实例的（原型模式），在第一次使用才会加载。懒汉方式
-（传送门：多实例下不能解决循环依赖的问题）
-- request同一次请求
-- session同一个会话级别
-
-## Bean的懒加载
-主要针对单实例的情况。容器在初始化不加载，第一次使用才加载
-```java
-@Bean
-@Lazy
-public Person person() {
-    return new Person();
-}
-```
 
 ## @Conditional的条件判断
 场景：有两个组件AAspect 和BLog，BLog组件是依赖于AAspect的组件
@@ -276,6 +258,59 @@ public class MainConfig {
 
 ```
 
+
+## @Value & @PropertySource
+给组件赋值，**PropertySource必须写在配置类上**
+```java
+@Configuration
+@PropertySource(value = "person.properties")
+public class MainConfig {
+    @Bean
+    public Person person() {
+        return new Person();
+    }
+}
+
+public class Person {
+    @Value("${person.age}")
+    private Integer age;
+
+    public void setAge(Integer age){
+        this.age = age;
+    }
+    public Integer getAge() {
+        return this.age;
+    }
+    @Override
+    public String toString() {
+        return "Person{" +
+                "age=" + age +
+                '}';
+    }
+}
+
+// person.properties文件内容为  person.age=2222
+```
+注意：`@ImportResource`是导入xml的
+
+## ---- 注入注解介绍结束 ----
+
+## Bean的作用域
+- Scope默认为单例的，容器在初始化的时候就加载。饿汉方式
+- Scope指定为prototype时是多实例的（原型模式），在第一次使用才会加载。懒汉方式
+（传送门：多实例下不能解决循环依赖的问题）
+- request同一次请求
+- session同一个会话级别
+
+## Bean的懒加载
+主要针对单实例的情况。容器在初始化不加载，第一次使用才加载
+```java
+@Bean
+@Lazy
+public Person person() {
+    return new Person();
+}
+```
 ## Bean的生命周期
 bean的创建 -> 初始化 -> 销毁方法，是由IOC通过回调来控制
 
@@ -399,40 +434,6 @@ person--destroyMethod
 TODO 比较模糊，等源码过完再完善这里
 
 `InitializingBean`：静态检查、校验或者属性的赋值
-
-## @Value & @PropertySource
-给组件赋值，**PropertySource必须写在配置类上**
-```java
-@Configuration
-@PropertySource(value = "person.properties")
-public class MainConfig {
-    @Bean
-    public Person person() {
-        return new Person();
-    }
-}
-
-public class Person {
-    @Value("${person.age}")
-    private Integer age;
-
-    public void setAge(Integer age){
-        this.age = age;
-    }
-    public Integer getAge() {
-        return this.age;
-    }
-    @Override
-    public String toString() {
-        return "Person{" +
-                "age=" + age +
-                '}';
-    }
-}
-
-// person.properties文件内容为  person.age=2222
-```
-注意：`@ImportResource`是导入xml的
 
 ## 自动装配
 

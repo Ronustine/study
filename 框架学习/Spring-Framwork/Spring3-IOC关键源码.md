@@ -6,7 +6,7 @@
 
 ## 准备：BeanDefinition
 
-是Spring容器中Bean的描述，
+是Spring容器中Bean的描述，一个 BeanDefinition 描述了一个 Bean 实例，实例包含属性值、构造方法参数值以及更多实现信息
 
 ## 准备：ApplicationListener
 
@@ -46,6 +46,7 @@ public class App {
 通过容器发布了一个事件com.ronustine.testapplicationlistener.App$1[source=手动发布事件]
 */
 ```
+使用默认的并不会有异步线程处理，需要自己写一个，@Component命名为`applicationEventMultiCaster`，并继承SimpleApplicationEventMultiCaster。设置线程池
 
 #### 源码
 
@@ -65,7 +66,7 @@ public class SelfMulticaster extends SimpleApplicationEventMulticaster{
 
 ## 准备：BeanDefinitionRegistryPostProcessor​
 
-所有的bean定义信息将要被加载到容器中，Bean实例还没有被初始化。
+所有的bean定义信息将要被加载到容器中，Bean实例还没有被初始化。继承自BeanFactoryPostProcessor，在解析成BeanDefinition之前的时候
 
 #### 用法
 
@@ -148,17 +149,17 @@ AnnotationConfigApplicationContext继承自GenericApplicationContext，此Generi
 ```java
 // 这里开始
 public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
-    // 初始化了 注解Bean定义读取器 & 扫描器
+    // 转1，初始化了 注解Bean定义读取器 & 扫描器
     this();
 
     // 注册传入的配置类annotatedClasses
     this.register(annotatedClasses);
 
-    // 重点
+    // 转2，重点
     this.refresh();
 }
 
-// 接this();
+// 1. 接this();
 public AnnotationConfigApplicationContext() {
     // 注解Bean定义读取器，设置@Condition的注解解析器、后置处理器
     // 重点在 -> AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
@@ -171,7 +172,11 @@ public AnnotationConfigApplicationContext() {
 	this.scanner = new ClassPathBeanDefinitionScanner(this);
 }
 
+// 2. 接refresh。
+// 该方法在AbstractApplicationContext中
+public refresh() {
 
+}
 ```
 ## BeanPostProcessor
 > Bean后置处理器，它是Spring中定义的接口，在Spring容器的创建过程中（具体为Bean初始化前后）会回调BeanPostProcessor中定义的两个方法
