@@ -19,13 +19,13 @@
 #### Hash
 对索引做Hash（MD5、SHA等）运算，可以直接定位到需要的数据上，速度很快，不受表大小的影响，但只能做等值运算，做不到对范围取值
 
-#### B树
+#### B-树
 即平衡多路查找树。二叉的查找次数取决于树的高度，每次查找都是一次IO，所以优化成一颗矮胖的树：每个父节点有多个子树
 
 特点：
 - 排序方式：所有节点关键字是按递增次序排列，并遵循左小右大原则；
 - 子节点数：非叶节点的子节点数>1，且<=M ，且M>=2，空树除外（注：M阶代表一个树节点最多有多少个查找路径，M=M路,当M=2则是2叉树,M=3则是3叉）；
-- 关键字数：枝节点的关键字数量大于等于ceil(m/2)-1个且小于等于M-1个（注：ceil()是个朝正无穷方向取整的函数 如ceil(1.1)结果为2);
+- 关键字数：子节点的关键字数量大于等于ceil(m/2)-1个且小于等于M-1个（注：ceil()是个朝正无穷方向取整的函数 如ceil(1.1)结果为2);
 - 所有叶子节点均在同一层、叶子节点除了包含了关键字和关键字记录的指针外也有指向其子节点的指针只不过其指针地址都为null对应下图最后一层节点的空格子;
 
 #### B+树
@@ -81,7 +81,7 @@
 - `select * from a where a=3 and b>4 and c=3` 这种走到b索引就不会再走c了，因为无法知道第三个走到哪个b的下面，只能遍历
 
 ## Explain工具
-可以模拟优化器执行SQL语句，分析查询语句的性能瓶颈。在select语句之前增加explain关键字，MySQL会在查询上设置一个标记，执行查询会返回执行哦计划的信息，而不会执行。
+可以模拟优化器执行SQL语句，分析查询语句的性能瓶颈。在select语句之前增加explain关键字，MySQL会在查询上设置一个标记，执行查询会返回执行计划的信息，而不会执行。
 不过from包含子查询，仍会执行，并放入临时表中。
 
 分析结果的结构：
@@ -89,7 +89,7 @@
 | - | - | - | - | - | - | - | - | - | - | - | - |
 
 #### Explain的两个变种
-- explain extended：会在explain基础上提供一些查询优化的信息。紧随其后通过`show warnings`命令可以得到优化后的查询语句，看出优化器优化了什么。额外还有filtered列，是一个半分比的值，rows * filtered/100 可以估算出将要和explain中前一个表进行连接的行数（前一个表指 explain 中的id值比当前表id值小的表）；
+- explain extended：会在explain基础上提供一些查询优化的信息。紧随其后通过`show warnings`命令可以得到优化后的查询语句，看出优化器优化了什么。额外还有filtered列，是一个百分比的值，rows * filtered/100 可以估算出将要和explain中前一个表进行连接的行数（前一个表指 explain 中的id值比当前表id值小的表）；
 - explain partitions：相比explain多了个partitions字段，如果查询是基于分区表的，会显示查询将访问的分区。（不过基本会用分库分表代替，不会分区的）；
 
 #### id
@@ -103,7 +103,7 @@ id是select的序号，select有几个就有几条，id顺序按select出现的�
 - derived 包含在from子句中的子查询。MySQL会将结果存放在一个临时表中，也叫派生表；
 
 例子：
-`set session optimizer_switch='derived_merge=off';` #关闭mysql5.7新特性对衍 生表的合并优化
+`set session optimizer_switch='derived_merge=off';` #关闭mysql5.7新特性对衍生表的合并优化
 ` explain select (select 1 from actor where id = 1) from (select * from film where id = 1) der;`
 | id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra |
 | - | - | - | - | - | - | - | - | - | - |
@@ -124,7 +124,7 @@ id是select的序号，select有几个就有几条，id顺序按select出现的�
 依此从优到差为：system > const > eq_ref > ref > range > index > ALL
 保证查询达到range，最好ref
 - NULL： MySQL在优化阶段分解查询语句，在执行阶段用不着再访问表或索引。如在索引列选取最小值，可单独查找索引完成，不需要访问表；`explain select min(id) from film;`
-- const，system：MySQL能对查询的某部分进行优化并将其转化成一个常量（可以看show warnings的结果）。用于promary key 或unique key的所有列与常数比较时，所以表最多有一个匹配行，读取1次。system是const的特例，表里只有一条元素匹配时为system；`explain extended select * from (select * from film where id = 1) tmp;`
+- const，system：MySQL能对查询的某部分进行优化并将其转化成一个常量（可以看show warnings的结果）。用于primary key 或unique key的所有列与常数比较时，所以表最多有一个匹配行，读取1次。system是const的特例，表里只有一条元素匹配时为system；`explain extended select * from (select * from film where id = 1) tmp;`
 
 | id | select_type | table | type | possible_keys | key | key_len | ref | rows | filtered | Extra |
 | - | - | - | - | - | - | - | - | - | - | - |

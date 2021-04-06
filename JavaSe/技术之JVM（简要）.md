@@ -288,7 +288,7 @@ Serial（串行）收集器是最基本、历史最悠久的垃圾收集器。�
 筛选回收（Cleanup，STW）：筛选回收阶段首先对各个Region的回收价值和成本进行 排序，根据用户所期望的GC停顿时间(可以用JVM参数 `-XX:MaxGCPauseMillis`指定)来制定回收计划，比如说老年代此时有1000个Region都满了，但是因为根据预期停顿时间，本次垃圾回收可能只能停顿200毫秒，那么通过之前回收成本计算得知，可能回收其中800个Region刚好需要200ms，那么就只会回收800个Region，尽量把GC导致的停顿时间控制在我们指定的范围内。这个阶段其实也可以做到与用户程序一起并发执行，但是因为只回收一部分Region，时间是用户可控制的，而且停顿用户线程将大幅提高收集效率。回收算法主要用的是复制算法，将一个region中的存活对象复制到另一个region中，几乎不会有太多内存碎片。
 
 YoungGC
-YoungGC并不是说现有的Eden区放满了就会马上触发，而且G1会计算下现在Eden区回收大 概要多久时间，如果回收时间远远小于参数 -XX:MaxGCPauseMills 设定的值，那么增加年轻代的region，继续给新对象存放，不会马上做Young GC，直到下一次Eden区放满，G1计算回收时间接近参数 -XX:MaxGCPauseMills 设定的值，那么就会触发Young GC.
+YoungGC并不是说现有的Eden区放满了就会马上触发，而且G1会计算下现在Eden区回收大概要多久时间，如果回收时间远远小于参数 -XX:MaxGCPauseMills 设定的值，那么增加年轻代的region，继续给新对象存放，不会马上做Young GC，直到下一次Eden区放满，G1计算回收时间接近参数 -XX:MaxGCPauseMills 设定的值，那么就会触发Young GC.
 MixedGC
 不是FullGC，老年代的堆占有率达到参数(-XX:InitiatingHeapOccupancyPercen)设定的值则触发，回收所有的Young和部分Old(根据期望的GC停顿时间确定old区垃圾收集的优先顺序)以及大对象区，正常情况G1的垃圾收集是先做MixedGC，主要使用复制算法，需要把各个region中存活的对象拷贝到别的region里去，拷贝过程中如果发现没有足够的空region能够承载拷贝对象就会触发一次Full GC 
 Full GC

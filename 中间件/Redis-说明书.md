@@ -196,6 +196,9 @@ ZINTERSTORE destkey numkeys key [key ...]
 
 redis可以配置最大并发处理客户端的数量：maxclients 10000
 
+#### 单线程与多线程
+性能瓶颈不在CPU 官方：[为什么是单线程的](https://redis.io/topics/faq#redis-is-single-threaded-how-can-i-exploit-multiple-cpu--cores)
+
 ## redis持久化
 #### RDB快照
 默认生成dump.rdb的二进制数据。
@@ -308,7 +311,7 @@ sentinel monitor mymaster 192.168.0.60 6379 2 13
 
 #### 选举机制
 1. 哨兵监测主节点无法连接，置为sdown（主观下线）；
-2. 超过半数的哨兵置为sdown则可以变为odown（主观下线）；
+2. 超过半数的哨兵置为sdown则可以变为odown（客观下线）；
 3. 哨兵开启选举周期，选举出leader哨兵，先到先得，得到超过半数票则可成为leader（这里说明了哨兵最好是基数个）；
 4. 该leader对redis进行故障转移，将其中的slave升级为master；
 
@@ -523,6 +526,7 @@ Set结构
 - 自己加的锁只有自己能解锁；
 - 面对应用可能异常处理不当，甚至宕机的情况，锁要能自我解锁，即设置超时时间；
 - 超时时间的设定要能满足业务的处理时长，这时长不好把控，可以用守护线程来续超时时间；
+- [时钟漂移（没有特别好的解决方案）](#jump1)
 
 #### redisson
 ![2](img/redis_2.png)
@@ -590,6 +594,17 @@ redis实现的共享锁问题：线程1在主节点获取锁成功后主节点�
 #### 高性能分布式锁解决方案
 场景：一把锁只能支撑几万的QPS，如何能提高到十倍QPS
 解决：将一把锁化解成多把锁，即商品库存可以分成好几份，用不同的锁管理。可以参考ConcurrentHashMap 分段锁的实现。
+
+#### <span id="jump1">注：时钟漂移</span>
+redis的过期时间是依赖系统时钟的，如果时钟漂移过大时会影响到过期时间的计算。
+
+为什么系统时钟会存在漂移呢？先简单说下系统时间，linux提供了两个系统时间：clock realtime和clock monotonic。clock realtime也就是xtime/wall time，这个时间时可以被用户改变的，被NTP改变。gettimeofday拿的就是这个时间，redis的过期计算用的也是这个时间。
+clock monotonic，直译是单调时间，不会被用户改变，但是会被NTP改变。
+
+理想的情况时，所有系统的时钟都时刻与NTP服务器保持同步，但这很难。导致系统时钟漂移的原因有两个：
+
+1. 系统的时钟和NTP服务器不同步。这个目前没有特别好的解决方案；
+2. clock realtime被人为修改。在实现分布式锁时，不要使用clock realtime。不过很可惜，redis使用的就是这个时间，Redis 5.0源码，使用的还是clock realtime。也就是说，人为修改redis服务器的时间，就能让redis出问题了。
 
 ## 缓存优化相关
 

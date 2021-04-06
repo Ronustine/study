@@ -103,7 +103,7 @@ Innodb_row_lock_waits:系统启动后到现在总共等待的次数
 1. MySQL默认级别是repeatable-read，能否解决幻读？
 间隙锁可以满足：可以用间隙锁在Session_1下面执行update account set name = 'xxx' where id > 10 and id <=20;，则其他Session没法在这个范围所包含的 间隙里插入或修改任何数据。
 
-#### MVVC原理
+#### MVCC原理
 > 是对读做出的优化，可满足读已提交、可重复读的隔离级别。
 > MVCC是"Multi-Version Concurrency Control"的缩写。对数据库的任何修改的提交都不会直接覆盖之前的数据，而是产生一个新的版本与老版本共存，使得读取时可以完全不加锁。这个版本一般用进行数据操作的事务ID(单调递增）来定义。
 
