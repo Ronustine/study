@@ -124,8 +124,8 @@ sync path
 | :- | :- |
 | PERSISTENT | 持久节点 | 
 | PERSISTENT_SEQUENTIAL | 持久序号节点 | 
-| EPHEMERAL | 临时节点（不可在拥有子节点） | 
-| EPHEMERAL_SEQUENTIAL | 临时序号节点（不可在拥有子节点） | 
+| EPHEMERAL | 临时节点（不可再拥有子节点） | 
+| EPHEMERAL_SEQUENTIAL | 临时序号节点（不可再拥有子节点） | 
 
 **PERSISTENT（持久节点）**
 ```
