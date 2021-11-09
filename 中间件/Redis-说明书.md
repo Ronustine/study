@@ -667,6 +667,9 @@ BloomFilter<String> bloomFilter = BloomFilter.create(Funnels.stringFunnel(Charse
 解决：
 分布式锁，第一个请求获取并设置缓存即可，其他请求等待即可；
 
+#### 与数据库保证强一致性
+场景：金融贷款余额，缓存与数据库要一致
+
 ## 参考规范
 #### key的设计
 - 可读性、可维护：以业务名(或数据库名)为前缀(防止key冲突)，用冒号分隔，比如业务名:表名:id；
