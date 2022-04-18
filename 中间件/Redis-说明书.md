@@ -15,10 +15,22 @@ yum install gcc
 # 修改redis.conf配置：daemonize yes，启动时指定配置文件。这样才能使用后台启动
 src/redis‐server redis.conf
 
+# 链接
+src/redis-cli
+
 # set get简单使用
 set dx 2020
 get dx
 quit
+
+# 配置密码
+# redis.conf 找到这一行：# requirepass foobared，解调注释修改成自己的密码，重启redis。
+# 但是没用，进客户端执行这个命令设置
+config set requirepass 自己设
+
+# 密码校验
+auth 自己密码
+OK
 
 # 杀服务
 pkill redis‐server

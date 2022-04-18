@@ -112,3 +112,19 @@ protected void onRefresh() {
 
 以tomcat-starter为例
 - 可以配置核心设置，靠注解@PropertySource将application.propertise读入（~~是的吧~~） 
+
+#### starter & autoconfigure
+[官网参考](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.developing-auto-configuration.custom-starter)
+A typical Spring Boot starter contains code to auto-configure and customize the infrastructure of a given technology, let’s call that "acme". To make it easily extensible, a number of configuration keys in a dedicated namespace can be exposed to the environment. Finally, a single "starter" dependency is provided to help users get started as easily as possible.
+
+Concretely, a custom starter can contain the following:
+
+- The autoconfigure module that contains the auto-configuration code for "acme".
+
+- The starter module that provides a dependency to the autoconfigure module as well as "acme" and any additional dependencies that are typically useful. In a nutshell, adding the starter should provide everything needed to start using that library.
+
+This separation in two modules is in no way necessary. If "acme" has several flavors, options or optional features, then it is better to separate the auto-configuration as you can clearly express the fact some features are optional. Besides, you have the ability to craft a starter that provides an opinion about those optional dependencies. At the same time, others can rely only on the autoconfigure module and craft their own starter with different opinions.
+
+If the auto-configuration is relatively straightforward and does not have optional feature, merging the two modules in the starter is definitely an option.
+
+以上：
