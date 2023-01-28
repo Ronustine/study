@@ -25,3 +25,4 @@
 - 领域驱动设计和实践 Domain-Driven Design
 - 测试驱动的面向对象软件开发 Growing Object-Oriented Software, Guided by Tests
 - 持续交付 Continuous Delivery
+- 互联网创业核心技术:构建可伸缩的web应用
