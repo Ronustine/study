@@ -102,8 +102,9 @@ SELECT * FROM information_schema.OPTIMIZER_TRACE;
 6. group by和order by类似，先排序后分组。遵照索引创建顺序的最左前缀法则。如果group by优化不要排序那么加上order by null禁止排序。where高于having，尽量写在where中；
 
 ## filesort文件排序原理
-- 单路排序：一次性去除满足条件行的所有字段，然后在sort buffer中进行排序，trace工具可以看到sort_mode显示sort_key, additional_fields或者sort_key,packed_additional_fields；
-- 双路排序（回表排序模式）：根据相应条件取出相应的排序字段，可以直接定位行数据的行ID，然后在sort buffer中进行排序，排序后再次取回其它需要的字段，tance工具可以看到sort_mode信息里显示sort_key, rowid；
+- 单路排序：一次性去除满足条件行的所有字段，然后在sort buffer中进行排序，trace工具可以看到sort_mode显示sort_key, additional_fields或者sort_key,packed_additional_fields；（一条sql语句查询时，会将需要查询的字段以及需要排序的字段全部拿出来，放到上面所说的 sort buffer 这个区域中，进行排序，前提是可以放的下）
+- 双路排序（回表排序模式）：根据相应条件取出相应的排序字段，可以直接定位行数据的行ID，然后在sort buffer中进行排序，排序后再次取回其它需要的字段，tance工具可以看到sort_mode信息里显示sort_key, rowid；（当上面在 sort buffer 中放不下的时候，就会进行双路排序，双路排序是只拿出需要排序的字段以及主键id去 sort buffer 中排序，排好序之后进行回表操作，访问主键聚簇索引，再进行数据的获取）
+
 
 MySQL通过比较系统变量 max_length_for_sort_data(默认1024字节) 的大小和需要查询的字段总大小来 判断使用哪种排序模式。 
 - 如果 max_length_for_sort_data 比查询字段的总长度大，那么使用 单路排序模式； 

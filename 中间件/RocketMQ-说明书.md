@@ -324,6 +324,8 @@ public class TransactionListenerImpl implements RocketMQLocalTransactionListener
 
 }
 ```
+## 与kafka对比
+https://blog.csdn.net/shijinghan1126/article/details/104724407
 
 ## 源码
 
